@@ -80,47 +80,6 @@ Pilihan tambahan:
 
 Saat pertama kali dijalankan, skrip juga membangun aplikasi web jika belum ada.
 
-### Cara manual: dua terminal
-
-Buka **dua terminal**, keduanya di folder proyek.
-
-### Terminal 1 — backend
-
-```powershell
-cd backend
-..\.venv\Scripts\python.exe main.py
-```
-
-Tunggu sampai muncul tulisan `Uvicorn running on http://127.0.0.1:8001`. Biarkan terminal ini tetap terbuka.
-
-Pada percobaan pertama, backend otomatis membuat data awal di `backend/data/`: **Gedung T, Q, dan W**.
-Gedung Q sudah berisi foto contoh beserta 9 lot.
-
-Cek backend dengan membuka http://127.0.0.1:8001/api/health di browser. Hasilnya harus `{"status":"ok"}`.
-
-### Terminal 2 — tampilan (pilih salah satu cara)
-
-**Cara A — mode pengembangan (paling mudah):**
-
-```powershell
-cd parking_ui
-flutter pub get
-flutter run -d edge
-```
-
-Ganti `edge` dengan `chrome` jika memakai Google Chrome. Jendela browser terbuka otomatis setelah proses
-kompilasi selesai (sekitar 1 menit).
-
-**Cara B — versi rilis (lebih cepat saat dipakai):**
-
-```powershell
-cd parking_ui
-flutter build web
-..\.venv\Scripts\python.exe -m http.server 5600 --bind 127.0.0.1 --directory build\web
-```
-
-Lalu buka **http://localhost:5600** di browser.
-
 ### Menghentikan aplikasi
 
 Klik terminal yang bersangkutan lalu tekan **Ctrl + C**. Lakukan di kedua terminal.
