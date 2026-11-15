@@ -111,14 +111,20 @@ class _DetectFlowPageState extends State<DetectFlowPage> {
 
   void _lotsEdited() => _result = null;
 
-  void _addSlot(Rect rect) => setState(() {
-    _slots.add(Slot(label: nextSlotLabel(_slots, b.code), rect: rect));
+  // void _addSlot(Rect rect) => setState(() {
+  //   _slots.add(Slot(label: nextSlotLabel(_slots, b.code), rect: rect));
+  void _addSlot(List<Offset> points) => setState(() {
+  _slots.add(Slot(label: nextSlotLabel(_slots, b.code), points: points));
+  // ... biarkan kode di bawahnya tetap sama
     _select(_slots.length - 1);
     _lotsEdited();
   });
 
-  void _changeSlot(int i, Rect rect) => setState(() {
-    _slots[i].rect = rect;
+  // void _changeSlot(int i, Rect rect) => setState(() {
+  //   _slots[i].rect = rect;
+  void _changeSlot(int i, List<Offset> points) => setState(() {
+  _slots[i].points = points;
+  // ... biarkan kode di bawahnya tetap sama
     _lotsEdited();
   });
 
@@ -192,7 +198,8 @@ class _DetectFlowPageState extends State<DetectFlowPage> {
       setState(() {
         _result = result;
         // Pakai lot versi server (sudah dirapikan) supaya urutannya sama dengan hasil.
-        _slots = [for (final s in result.slots) Slot(label: s.label, rect: s.rect)];
+        // _slots = [for (final s in result.slots) Slot(label: s.label, rect: s.rect)];
+        _slots = [for (final s in result.slots) Slot(label: s.label, points: s.points)];
         if (result.warning != null) {
           _fail(result.warning!, connection: false);
         } else {
@@ -385,9 +392,12 @@ class _DetectFlowPageState extends State<DetectFlowPage> {
   Widget _lotEditor() {
     final size = _imageSize;
     final selected = _selected;
+    // final hint = _mode == EditMode.draw
+    //     ? 'Tarik di foto untuk menambah lot baru.'
+    //     : 'Klik lot untuk memilih. Geser untuk memindah, tarik sudut untuk mengubah ukuran.';
     final hint = _mode == EditMode.draw
-        ? 'Tarik di foto untuk menambah lot baru.'
-        : 'Klik lot untuk memilih. Geser untuk memindah, tarik sudut untuk mengubah ukuran.';
+    ? 'Klik 4 titik sudut lot secara berurutan pada foto.'
+    : 'Klik lot untuk memilih. Geser poligon untuk memindah, tarik sudut untuk mengubah bentuk.';
     final hasLayout = _layout?.size != null;
     return Panel(
       padding: const EdgeInsets.all(14),
@@ -570,7 +580,8 @@ class _DetectFlowPageState extends State<DetectFlowPage> {
               child: SlotCanvas.result(
                 imageBytes: _bytes,
                 imageSize: photo.size,
-                slots: [for (final s in r.slots) Slot(label: s.label, rect: s.rect)],
+                // slots: [for (final s in r.slots) Slot(label: s.label, rect: s.rect)],
+                slots: [for (final s in r.slots) Slot(label: s.label, points: s.points)],
                 statuses: r.statuses,
               ),
             ),

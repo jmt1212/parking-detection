@@ -68,7 +68,7 @@ $backend = $null
 $web = $null
 try {
   Write-Host 'Menjalankan backend di http://127.0.0.1:8001 ...' -ForegroundColor Cyan
-  $backend = Start-Process -FilePath $python -ArgumentList 'main.py' `
+  $backend = Start-Process -FilePath $python -ArgumentList 'main2.py' `
     -WorkingDirectory (Join-Path $root 'backend') -NoNewWindow -PassThru
 
   Write-Host 'Menjalankan aplikasi web di http://localhost:5600 ...' -ForegroundColor Cyan
