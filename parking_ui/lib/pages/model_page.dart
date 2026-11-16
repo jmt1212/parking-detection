@@ -56,6 +56,12 @@ class _ModelPageState extends State<ModelPage> {
     _pathController.text = browse.path;
   }
 
+  /// Gabungkan path dengan nama subfolder memakai pemisah milik server.
+  String _childPath(String parent, String name) {
+    final sep = parent.contains('\\') ? '\\' : '/';
+    return parent.endsWith(sep) ? '$parent$name' : '$parent$sep$name';
+  }
+
   Future<void> _open(String path) async {
     try {
       final browse = await api.browse(path);
@@ -81,6 +87,9 @@ class _ModelPageState extends State<ModelPage> {
 
   void _useModel(String folder, String model) =>
       _apply(() => api.updateSettings(modelDir: folder, model: model), 'Model aktif: $model');
+
+  void _useFolder(String folder) =>
+      _apply(() => api.updateSettings(modelDir: folder), 'Folder model: $folder');
 
   void _saveThresholds() => _apply(() => api.updateSettings(conf: _conf, overlap: _overlap), 'Ambang deteksi disimpan');
 
@@ -123,9 +132,11 @@ class _ModelPageState extends State<ModelPage> {
                   children: [
                     Card(
                       child: ListTile(
-                        leading: const Icon(Icons.check_circle, color: Color(0xFF2E9E5B)),
+                        leading: browse.exists
+                            ? const Icon(Icons.check_circle, color: Color(0xFF2E9E5B))
+                            : Icon(Icons.folder_off_outlined, color: theme.colorScheme.error),
                         title: Text(settings.model.isEmpty ? '(belum ada model)' : 'Model aktif: ${settings.model}'),
-                        subtitle: Text(settings.modelDir),
+                        subtitle: Text(browse.exists ? settings.modelDir : '${settings.modelDir} (tidak ditemukan)'),
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -153,51 +164,64 @@ class _ModelPageState extends State<ModelPage> {
                         OutlinedButton(onPressed: () => _open(_pathController.text), child: const Text('Buka')),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Card(
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        children: [
-                          if (browse.parent != null)
-                            ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.arrow_upward),
-                              title: const Text('Folder induk'),
-                              onTap: () => _open(browse.parent!),
-                            ),
-                          for (final dir in browse.dirs)
-                            ListTile(
-                              dense: true,
-                              leading: const Icon(Icons.folder_outlined),
-                              title: Text(dir),
-                              onTap: () => _open('${browse.path}\\$dir'),
-                            ),
-                          if (browse.dirs.isEmpty && browse.parent == null)
-                            const ListTile(dense: true, title: Text('Tidak ada subfolder')),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text('Model di folder ini (${browse.models.length})', style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 4),
-                    if (browse.models.isEmpty)
-                      Text('Tidak ada file .pt di folder ini.', style: theme.textTheme.bodySmall)
-                    else
-                      for (final m in browse.models)
-                        Card(
-                          child: ListTile(
-                            leading: const Icon(Icons.memory),
-                            title: Text(m.name),
-                            subtitle: Text('${m.sizeMb} MB'),
-                            selected: settings.modelDir == browse.path && settings.model == m.name,
-                            trailing: settings.modelDir == browse.path && settings.model == m.name
-                                ? const Chip(label: Text('Aktif'))
-                                : FilledButton.tonal(
-                                    onPressed: _busy ? null : () => _useModel(browse.path, m.name),
-                                    child: const Text('Gunakan'),
-                                  ),
-                          ),
+                    if (browse.exists)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: OutlinedButton.icon(
+                          onPressed: _busy || settings.modelDir == browse.path ? null : () => _useFolder(browse.path),
+                          icon: const Icon(Icons.check),
+                          label: Text(settings.modelDir == browse.path ? 'Folder aktif' : 'Pakai folder ini'),
                         ),
+                      ),
+                    const SizedBox(height: 8),
+                    if (!browse.exists)
+                      _missingFolderCard(browse)
+                    else ...[
+                      Card(
+                        clipBehavior: Clip.antiAlias,
+                        child: Column(
+                          children: [
+                            if (browse.parent != null)
+                              ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.arrow_upward),
+                                title: const Text('Folder induk'),
+                                onTap: () => _open(browse.parent!),
+                              ),
+                            for (final dir in browse.dirs)
+                              ListTile(
+                                dense: true,
+                                leading: const Icon(Icons.folder_outlined),
+                                title: Text(dir),
+                                onTap: () => _open(_childPath(browse.path, dir)),
+                              ),
+                            if (browse.dirs.isEmpty && browse.parent == null)
+                              const ListTile(dense: true, title: Text('Tidak ada subfolder')),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text('Model di folder ini (${browse.models.length})', style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 4),
+                      if (browse.models.isEmpty)
+                        Text('Tidak ada file .pt di folder ini.', style: theme.textTheme.bodySmall)
+                      else
+                        for (final m in browse.models)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.memory),
+                              title: Text(m.name),
+                              subtitle: Text('${m.sizeMb} MB'),
+                              selected: settings.modelDir == browse.path && settings.model == m.name,
+                              trailing: settings.modelDir == browse.path && settings.model == m.name
+                                  ? const Chip(label: Text('Aktif'))
+                                  : FilledButton.tonal(
+                                      onPressed: _busy ? null : () => _useModel(browse.path, m.name),
+                                      child: const Text('Gunakan'),
+                                    ),
+                            ),
+                          ),
+                    ],
                     const Divider(height: 40),
                     Text('Ambang deteksi', style: theme.textTheme.titleMedium),
                     const SizedBox(height: 8),
@@ -246,6 +270,72 @@ class _ModelPageState extends State<ModelPage> {
                 ),
               ),
             ),
+    );
+  }
+
+  /// Tampilan saat folder model tidak ada: jangan buntu, beri jalan untuk pindah folder.
+  Widget _missingFolderCard(BrowseResult browse) {
+    final theme = Theme.of(context);
+    final onCard = theme.colorScheme.onErrorContainer;
+    return Card(
+      color: theme.colorScheme.errorContainer,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.folder_off_outlined, color: onCard),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Folder model tidak ditemukan',
+                    style: theme.textTheme.titleSmall?.copyWith(color: onCard, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              browse.message ?? 'Folder tidak ditemukan: ${browse.path}',
+              style: theme.textTheme.bodySmall?.copyWith(color: onCard),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Ubah lokasi di atas, atau buka folder terdekat lalu pilih folder model yang benar.',
+              style: theme.textTheme.bodySmall?.copyWith(color: onCard),
+            ),
+            if (browse.nearest != null || browse.parent != null) ...[
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (browse.nearest != null)
+                    Tooltip(
+                      message: browse.nearest!,
+                      child: FilledButton.tonalIcon(
+                        onPressed: () => _open(browse.nearest!),
+                        icon: const Icon(Icons.folder_open),
+                        label: const Text('Buka folder terdekat'),
+                      ),
+                    ),
+                  if (browse.parent != null && browse.parent != browse.nearest)
+                    Tooltip(
+                      message: browse.parent!,
+                      child: OutlinedButton.icon(
+                        onPressed: () => _open(browse.parent!),
+                        icon: const Icon(Icons.arrow_upward),
+                        label: const Text('Folder induk'),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 
