@@ -47,8 +47,26 @@ foreach ($port in 8001, 5600) {
   }
 }
 
-# Aplikasi web dibangun jika diminta atau belum pernah dibangun.
-if ($Build -or -not (Test-Path (Join-Path $webDir 'index.html'))) {
+# Aplikasi web dibangun jika diminta, belum pernah dibangun, atau kode sumbernya
+# lebih baru dari hasil build terakhir. Dengan begitu perubahan di parking_ui\lib
+# ikut terbangun walau skrip dijalankan tanpa -Build.
+$stamp = Join-Path $webDir '.build-stamp'
+$built = [DateTime]::MinValue
+if (Test-Path $stamp) {
+  $built = (Get-Item $stamp).LastWriteTime
+} elseif (Test-Path (Join-Path $webDir 'main.dart.js')) {
+  $built = (Get-Item (Join-Path $webDir 'main.dart.js')).LastWriteTime
+}
+$sources = @(
+  (Join-Path $root 'parking_ui\lib'),
+  (Join-Path $root 'parking_ui\web'),
+  (Join-Path $root 'parking_ui\pubspec.yaml'),
+  (Join-Path $root 'parking_ui\pubspec.lock')
+)
+$changed = Get-ChildItem $sources -Recurse -File -ErrorAction SilentlyContinue |
+  Where-Object { $_.LastWriteTime -gt $built } | Select-Object -First 1
+
+if ($Build -or -not (Test-Path (Join-Path $webDir 'index.html')) -or $changed) {
   $flutter = (Get-Command flutter -ErrorAction SilentlyContinue).Source
   if (-not $flutter) {
     $flutter = Join-Path $env:USERPROFILE 'flutter\bin\flutter.bat'
@@ -59,6 +77,8 @@ if ($Build -or -not (Test-Path (Join-Path $webDir 'index.html'))) {
   try {
     & $flutter build web
     if ($LASTEXITCODE -ne 0) { Fail 'Gagal membangun aplikasi web.' }
+    # Tandai waktu build supaya build berikutnya hanya jalan saat sumber berubah.
+    Set-Content -Path $stamp -Value '' -NoNewline
   } finally {
     Pop-Location
   }

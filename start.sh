@@ -128,11 +128,27 @@ find_flutter() {
   return 1
 }
 
-if [[ $BUILD -eq 1 || ! -f "$WEB_DIR/index.html" ]]; then
-  FLUTTER="$(find_flutter)" || fail "Aplikasi web belum dibangun dan Flutter tidak ditemukan.
+STAMP="$WEB_DIR/.build-stamp"
+
+# Bangun jika diminta, belum pernah dibangun, atau sumber Flutter lebih baru dari
+# hasil build terakhir (supaya perubahan di parking_ui/lib tidak tertinggal).
+needs_build() {
+  [[ $BUILD -eq 1 ]] && return 0
+  [[ -f "$WEB_DIR/index.html" ]] || return 0
+  local ref="$STAMP"
+  [[ -f "$ref" ]] || ref="$WEB_DIR/main.dart.js"
+  [[ -f "$ref" ]] || return 0
+  [[ -n "$(find "$UI_DIR/lib" "$UI_DIR/web" \
+             "$UI_DIR/pubspec.yaml" "$UI_DIR/pubspec.lock" \
+             -newer "$ref" -type f -print -quit 2>/dev/null)" ]]
+}
+
+if needs_build; then
+  FLUTTER="$(find_flutter)" || fail "Aplikasi web perlu dibangun dan Flutter tidak ditemukan.
 Pasang Flutter (https://docs.flutter.dev/get-started/install) atau tambahkan folder bin-nya ke PATH."
   info "Membangun aplikasi web (sekitar 1 menit)..."
   (cd "$UI_DIR" && "$FLUTTER" build web) || fail "Gagal membangun aplikasi web."
+  : > "$STAMP"
 fi
 
 # --- Jalankan ---------------------------------------------------------------
