@@ -36,7 +36,7 @@ git --version
 ## 2. Ambil kode proyek
 
 ```powershell
-git clone git@github.com:jmt1212/yolo-project.git
+git clone git@github.com:jmt1212/parking-detection.git
 cd yolo-project
 ```
 
