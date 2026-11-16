@@ -41,7 +41,7 @@ cd parking-detection
 ```
 
 > Jika belum punya SSH key di GitHub, pakai alamat HTTPS:
-> `git clone https://github.com/jmt1212/yolo-project.git`
+> `git clone https://github.com/jmt1212/parking-detection.git`
 
 ---
 
