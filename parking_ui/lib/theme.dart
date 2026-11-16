@@ -44,8 +44,14 @@ ThemeData buildTheme() {
         shape: shape,
         padding: pad,
         backgroundColor: Pk.dark,
+        // Explicit light foreground/icon colors keep every FilledButton variant
+        // readable. Without this, tonal buttons use the dark onSecondaryContainer
+        // color on top of the dark background.
+        foregroundColor: Colors.white,
+        iconColor: Colors.white,
         disabledBackgroundColor: Pk.fill,
         disabledForegroundColor: Pk.faint,
+        disabledIconColor: Pk.faint,
         textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
       ),
     ),
