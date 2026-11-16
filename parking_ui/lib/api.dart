@@ -704,16 +704,34 @@ class ModelFile {
 }
 
 class BrowseResult {
-  BrowseResult({required this.path, required this.parent, required this.dirs, required this.models});
+  BrowseResult({
+    required this.path,
+    required this.parent,
+    required this.dirs,
+    required this.models,
+    this.exists = true,
+    this.nearest,
+    this.message,
+  });
   final String path;
   final String? parent;
   final List<String> dirs;
   final List<ModelFile> models;
+
+  /// False jika folder yang diminta tidak ada; UI menawarkan folder pengganti.
+  final bool exists;
+
+  /// Folder terdekat yang masih ada (untuk kembali saat folder model hilang).
+  final String? nearest;
+  final String? message;
 
   factory BrowseResult.fromJson(Map<String, dynamic> j) => BrowseResult(
     path: j['path'],
     parent: j['parent'],
     dirs: List<String>.from(j['dirs']),
     models: (j['models'] as List).map((e) => ModelFile.fromJson(e)).toList(),
+    exists: j['exists'] ?? true,
+    nearest: j['nearest'],
+    message: j['message'],
   );
 }

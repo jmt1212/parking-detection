@@ -253,6 +253,20 @@ def list_models(model_dir):
     ]
 
 
+def nearest_existing_dir(path):
+    """Folder terdekat yang masih ada, dipakai saat folder model hilang."""
+    candidate = path
+    while True:
+        try:
+            if candidate.is_dir():
+                return candidate
+        except OSError:
+            pass
+        if candidate.parent == candidate:
+            return None
+        candidate = candidate.parent
+
+
 def get_model(path):
     key = str(path)
     with model_lock:
@@ -419,10 +433,25 @@ def get_models(dir: Optional[str] = None):
 
 @app.get("/api/browse")
 def browse(path: Optional[str] = None):
+    """Daftar subfolder dan file .pt, untuk memilih folder model dari UI.
+
+    Jika folder tidak ada, hasil tetap dikembalikan dengan exists=False beserta
+    folder terdekat yang masih ada, agar UI bisa menawarkan cara memperbaikinya.
+    """
     with db_lock:
         current = Path(path or load_db()["settings"]["model_dir"]).resolve()
+    parent = str(current.parent) if current.parent != current else None
     if not current.is_dir():
-        raise HTTPException(400, f"Folder tidak ditemukan: {current}")
+        nearest = nearest_existing_dir(current.parent)
+        return {
+            "path": str(current),
+            "parent": parent,
+            "dirs": [],
+            "models": [],
+            "exists": False,
+            "nearest": str(nearest) if nearest is not None else None,
+            "message": f"Folder tidak ditemukan: {current}",
+        }
     dirs = []
     for p in sorted(current.iterdir(), key=lambda p: p.name.lower()):
         try:
@@ -430,9 +459,9 @@ def browse(path: Optional[str] = None):
                 dirs.append(p.name)
         except OSError:
             continue
-    parent = str(current.parent) if current.parent != current else None
     return {"path": str(current), "parent": parent, "dirs": dirs,
-            "models": list_models(current)}
+            "models": list_models(current), "exists": True, "nearest": None,
+            "message": None}
 
 
 @app.get("/api/buildings")
