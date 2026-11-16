@@ -37,7 +37,7 @@ git --version
 
 ```powershell
 git clone git@github.com:jmt1212/parking-detection.git
-cd yolo-project
+cd parking-detection
 ```
 
 > Jika belum punya SSH key di GitHub, pakai alamat HTTPS:
