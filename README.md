@@ -80,6 +80,24 @@ Pilihan tambahan:
 
 Saat pertama kali dijalankan, skrip juga membangun aplikasi web jika belum ada.
 
+### Cara cepat: satu perintah (Linux / macOS)
+
+Dari folder proyek, jalankan:
+
+```bash
+./start.sh
+```
+
+Skrip ini menjalankan backend di port **8001** dan aplikasi web di port kosong pertama mulai **5600**
+(otomatis pindah ke 5601, 5602, ... jika 5600 sedang dipakai), menunggu backend siap, lalu membuka
+browser. Tekan **Ctrl + C** untuk menghentikan keduanya.
+
+Pilihan tambahan:
+
+- `--build`: bangun ulang aplikasi web dulu (butuh Flutter).
+- `--no-browser`: jangan buka browser secara otomatis.
+- `--setup`: buat `.venv` dan pasang `backend/requirements.txt` jika belum (sekali saja).
+
 ### Menghentikan aplikasi
 
 Klik terminal yang bersangkutan lalu tekan **Ctrl + C**. Lakukan di kedua terminal.
@@ -95,6 +113,7 @@ yolo-project/
 ├── parking_ui/         Aplikasi Flutter (lihat parking_ui/README.md untuk detail kode)
 ├── trial1/             Model YOLO .pt, foto contoh, dan prototipe awal (app.py + index.html)
 ├── start.ps1           Menjalankan backend dan aplikasi web sekaligus (Windows)
+├── start.sh            Sama, untuk Linux/macOS
 └── README.md           Dokumen ini
 ```
 
