@@ -299,7 +299,7 @@ def run_detection(photo, slots_in, model_path, conf, overlap):
     for box in results.boxes:
         cls_id = int(box.cls[0].item())
         label = results.names.get(cls_id, "").lower()
-        if "car" in label or label == "occupied" or cls_id == 1:
+        if "car" in label or label == "occupied":
             cars.append({
                 "bbox": [round(v, 1) for v in box.xyxy[0].cpu().numpy().tolist()],
                 "conf": round(float(box.conf[0].item()), 3),
